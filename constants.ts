@@ -1,4 +1,3 @@
-
 import { Plan, PlanType, Business, HybridPlan } from './types';
 
 export const PLANS: Record<PlanType, Plan> = {
@@ -37,20 +36,28 @@ export const MOCK_HYBRID_PLANS: HybridPlan[] = [
     basePrice: 15.00,
     pricePerOrder: 0.50,
     currency: 'USD',
+    variableBillingFrequency: 'monthly',
     features: ['Productos Ilimitados', 'Soporte WhatsApp', 'Panel de Analítica'],
     isActive: true,
-    isPopular: true
+    isPublic: true,
+    isPopular: true,
+    createdAt: Date.now(),
+    updatedAt: Date.now()
   },
   {
     id: 'hp2',
     name: 'Plan Escala',
     slug: 'plan-escala',
-    description: 'Ideal para negocios de alto volumen.',
+    description: 'Ideal para negocios de alto volumen con comisiones reducidas.',
     basePrice: 45.00,
     pricePerOrder: 0.25,
     currency: 'USD',
+    variableBillingFrequency: 'biweekly',
     features: ['Todo Ilimitado', 'API de Domicilios', 'Gestión Multi-Sucursal'],
-    isActive: true
+    isActive: true,
+    isPublic: true,
+    createdAt: Date.now(),
+    updatedAt: Date.now()
   }
 ];
 

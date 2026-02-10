@@ -1,4 +1,3 @@
-
 export enum PlanType {
   BASIC = 'BASIC',
   PRO = 'PRO',
@@ -12,7 +11,35 @@ export interface Plan {
   maxProducts: number;
   maxVoiceAI: number;
   features: string[];
-  hotmartUrl?: string; // Nuevo: Link de pago Hotmart
+  hotmartUrl?: string;
+}
+
+export interface LandingPlan {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  price: number;
+  currency: string;
+  period: 'monthly' | 'yearly' | 'lifetime';
+  features: string[];
+  isActive: boolean;
+  isPublic: boolean;
+  isPopular: boolean;
+  order: number;
+  icon: string;
+  color: string;
+  maxUsers: number;
+  maxProjects: number;
+}
+
+export interface PlanAuditLog {
+  id: string;
+  planId: string;
+  planName: string;
+  action: 'create' | 'update' | 'delete';
+  timestamp: number;
+  details: string;
 }
 
 export interface HybridPlan {
@@ -23,10 +50,32 @@ export interface HybridPlan {
   basePrice: number;
   pricePerOrder: number;
   currency: string;
+  variableBillingFrequency: 'weekly' | 'biweekly' | 'monthly';
   features: string[];
   isActive: boolean;
+  isPublic: boolean;
   isPopular?: boolean;
-  hotmartUrl?: string; // Nuevo: Link de pago Hotmart
+  hotmartUrl?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface Module {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  price: number;
+  status: 'active' | 'inactive';
+}
+
+export interface SystemService {
+  id: string;
+  name: string;
+  provider: string;
+  description: string;
+  status: 'active' | 'maintenance' | 'offline';
+  endpoint: string;
 }
 
 export interface GlobalPaymentConfig {
@@ -37,7 +86,7 @@ export interface GlobalPaymentConfig {
   stripe: { enabled: boolean; publicKey: string; secretKey: string; mode: 'sandbox' | 'production'; instructions: string };
   mercadoPago: { enabled: boolean; publicKey: string; accessToken: string; mode: 'sandbox' | 'production'; instructions: string; qrImage?: string };
   paypal: { enabled: boolean; clientId: string; secretKey: string; mode: 'sandbox' | 'production'; instructions: string; qrImage?: string };
-  hotmartGlobal: { enabled: boolean; instructions: string };
+  hotmartGlobal: { enabled: boolean; instructions: string; planUrls: Record<string, string> };
 }
 
 export interface Business {
@@ -64,6 +113,7 @@ export interface Business {
     instagram?: string;
   };
   paymentMethods: string[];
+  paymentConfigs?: Record<string, { account?: string; instructions?: string; qrImage?: string }>;
   usage: {
     voiceAICount: number;
     productCount: number;

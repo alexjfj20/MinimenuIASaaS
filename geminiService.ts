@@ -1,8 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-
 const productSchema = {
   type: Type.OBJECT,
   properties: {
@@ -14,15 +12,11 @@ const productSchema = {
   required: ['name', 'description', 'price', 'category'],
 };
 
-/**
- * Limpia profundamente la respuesta de la IA para obtener solo el objeto JSON.
- */
 function extractJSON(text: string): string {
   try {
-    const start = text.indexOf('{');
-    const end = text.lastIndexOf('}');
-    if (start !== -1 && end !== -1) {
-      return text.substring(start, end + 1);
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return jsonMatch[0];
     }
     return text.replace(/```json/g, '').replace(/```/g, '').trim();
   } catch (e) {
@@ -30,65 +24,73 @@ function extractJSON(text: string): string {
   }
 }
 
-/**
- * Genera una imagen realista basada en el nombre y descripción del producto.
- */
 export async function generateProductImage(productName: string, description: string, businessType: string): Promise<string> {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) return `https://placehold.co/600x400?text=Error+API+Key`;
+
+  const ai = new GoogleGenAI({ apiKey });
   try {
-    const prompt = `Fotografía publicitaria de alta resolución (8k, comida real) de "${productName}". 
-    Descripción: ${description}. 
-    Estilo: Fotografía de catálogo para un ${businessType}. 
-    La imagen debe ser ultra realista, iluminación profesional de estudio, fondo desenfocado, colores vibrantes y apetitosos.`;
+    const prompt = `Fotografía publicitaria profesional de "${productName}". Descripción: ${description}. Negocio: ${businessType}. Estilo: Iluminación de estudio, 8k, fondo desenfocado.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
-      contents: [{ parts: [{ text: prompt }] }],
+      contents: { parts: [{ text: prompt }] },
       config: {
-        imageConfig: {
-          aspectRatio: "4:3"
-        }
+        imageConfig: { aspectRatio: "4:3" }
       }
     });
 
-    for (const part of response.candidates?.[0]?.content?.parts || []) {
-      if (part.inlineData) {
-        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-      }
+    const part = response.candidates?.[0]?.content?.parts.find(p => p.inlineData);
+    if (part?.inlineData) {
+      return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
     }
     return `https://placehold.co/600x400?text=${encodeURIComponent(productName)}`;
   } catch (error) {
     console.error("Error generating product image:", error);
-    return `https://placehold.co/600x400?text=Imagen+No+Disponible`;
+    return `https://placehold.co/600x400?text=Error+Imagen`;
   }
 }
 
-export async function generateProductFromText(prompt: string) {
+export async function generateProductFromText(promptText: string) {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) throw new Error("API Key no configurada");
+
+  const ai = new GoogleGenAI({ apiKey });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: [{ role: 'user', parts: [{ text: `Crea un producto para el menú basado en esto: "${prompt}"` }] }],
+      contents: { 
+        parts: [{ text: `Genera un producto atractivo basado en: "${promptText}"` }] 
+      },
       config: {
         responseMimeType: "application/json",
         responseSchema: productSchema,
-        systemInstruction: "Eres un experto en marketing gastronómico. Genera productos que vendan. Devuelve solo JSON."
+        systemInstruction: "Eres un experto en menús para SaaS. Devuelve solo JSON válido."
       },
     });
 
-    return JSON.parse(extractJSON(response.text || '{}'));
+    const text = response.text;
+    if (!text) throw new Error("Respuesta de IA vacía");
+    
+    return JSON.parse(extractJSON(text));
   } catch (error) {
-    console.error("Error generating product from text:", error);
+    console.error("Error in generateProductFromText:", error);
     throw error;
   }
 }
 
 export async function generateProductFromVoice(audioBase64: string, businessType: string) {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) throw new Error("API Key no configurada");
+
+  const ai = new GoogleGenAI({ apiKey });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: {
         parts: [
           { inlineData: { data: audioBase64, mimeType: 'audio/webm' } },
-          { text: `Analiza el audio y crea un producto detallado para un negocio de tipo: ${businessType}. Extrae nombre, descripción apetitosa, precio y categoría. Responde estrictamente en formato JSON.` }
+          { text: `Analiza el audio para este negocio: ${businessType}. Extrae nombre, descripción, precio y categoría.` }
         ]
       },
       config: {
@@ -97,10 +99,12 @@ export async function generateProductFromVoice(audioBase64: string, businessType
       },
     });
 
-    const cleanJson = extractJSON(response.text || '{}');
-    return JSON.parse(cleanJson);
+    const text = response.text;
+    if (!text) throw new Error("Respuesta de voz vacía");
+
+    return JSON.parse(extractJSON(text));
   } catch (error) {
-    console.error("Error generating product from voice:", error);
+    console.error("Error in generateProductFromVoice:", error);
     throw error;
   }
 }

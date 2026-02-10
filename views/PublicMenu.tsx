@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Business, Product, Order } from '../types';
 
 interface PublicMenuProps {
@@ -13,6 +13,18 @@ const PublicMenu: React.FC<PublicMenuProps> = ({ businesses, products, addOrder 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [customerInfo, setCustomerInfo] = useState({ name: '', phone: '', payment: 'Nequi' });
+
+  // Efecto para cargar automáticamente el negocio desde la URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const businessId = params.get('business');
+    if (businessId && businesses.length > 0) {
+      const biz = businesses.find(b => b.id === businessId || b.menuSlug === businessId);
+      if (biz) {
+        setSelectedBusiness(biz);
+      }
+    }
+  }, [businesses]);
 
   const currentProducts = selectedBusiness ? products.filter(p => p.businessId === selectedBusiness.id && p.status === 'active') : [];
 
@@ -39,20 +51,20 @@ const PublicMenu: React.FC<PublicMenuProps> = ({ businesses, products, addOrder 
 
   if (!selectedBusiness) {
     return (
-      <div className="max-w-4xl mx-auto p-8">
-        <h1 className="text-3xl font-bold mb-8 text-center">Nuestros Negocios</h1>
+      <div className="max-w-4xl mx-auto p-8 animate-in fade-in duration-500">
+        <h1 className="text-3xl font-bold mb-8 text-center text-slate-800">Nuestros Negocios</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {businesses.map(b => (
             <div 
               key={b.id} 
               onClick={() => setSelectedBusiness(b)}
-              className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-xl transition transform hover:-translate-y-1"
+              className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-xl transition transform hover:-translate-y-1 group"
             >
               <div className="flex items-center gap-4">
-                <img src={b.logo} className="w-16 h-16 rounded-full" alt={b.name} />
+                <img src={b.logo} className="w-16 h-16 rounded-full object-cover border-2 border-slate-50 shadow-sm" alt={b.name} />
                 <div>
-                  <h3 className="font-bold text-xl">{b.name}</h3>
-                  <p className="text-gray-500 text-sm">{b.type} • {b.location}</p>
+                  <h3 className="font-bold text-xl text-slate-800 group-hover:text-indigo-600 transition">{b.name}</h3>
+                  <p className="text-slate-500 text-sm">{b.type} • {b.location}</p>
                 </div>
               </div>
             </div>
@@ -66,11 +78,15 @@ const PublicMenu: React.FC<PublicMenuProps> = ({ businesses, products, addOrder 
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white shadow-sm sticky top-0 z-20">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-           <button onClick={() => setSelectedBusiness(null)} className="text-indigo-600 font-medium flex items-center gap-1">
+           <button onClick={() => {
+             // Limpiar URL al volver a la lista
+             window.history.replaceState({}, '', window.location.pathname);
+             setSelectedBusiness(null);
+           }} className="text-indigo-600 font-medium flex items-center gap-1 hover:bg-indigo-50 px-3 py-1.5 rounded-xl transition">
              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
              Volver
            </button>
-           <h1 className="font-bold text-lg">{selectedBusiness.name}</h1>
+           <h1 className="font-bold text-lg text-slate-800">{selectedBusiness.name}</h1>
            <div className="w-8"></div>
         </div>
       </header>
@@ -83,7 +99,7 @@ const PublicMenu: React.FC<PublicMenuProps> = ({ businesses, products, addOrder 
         </div>
       )}
 
-      <main className="max-w-5xl mx-auto p-4 md:p-8 -mt-20 relative z-10">
+      <main className="max-w-5xl mx-auto p-4 md:p-8 -mt-20 relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
         <div className="mb-12 flex flex-col items-center bg-white/80 backdrop-blur rounded-3xl p-8 border border-white/50 shadow-xl">
            <img src={selectedBusiness.logo} className="w-32 h-32 rounded-3xl border-4 border-white shadow-2xl mb-4 object-cover" alt="logo" />
            <h1 className="text-4xl font-extrabold text-slate-800">{selectedBusiness.name}</h1>
@@ -169,7 +185,7 @@ const PublicMenu: React.FC<PublicMenuProps> = ({ businesses, products, addOrder 
          </div>
       </footer>
 
-      {/* Checkout Modal (Mantiene la misma lógica anterior) */}
+      {/* Checkout Modal */}
       {selectedProduct && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-end md:items-center justify-center p-4">
            <div className="bg-white w-full max-w-lg md:rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
@@ -189,11 +205,11 @@ const PublicMenu: React.FC<PublicMenuProps> = ({ businesses, products, addOrder 
                    <div className="space-y-6">
                       <img src={selectedProduct.image} className="w-full h-56 object-cover rounded-2xl shadow-inner" alt="product" />
                       <div>
-                        <h2 className="text-2xl font-bold">{selectedProduct.name}</h2>
-                        <p className="text-gray-500 mt-2">{selectedProduct.description}</p>
+                        <h2 className="text-2xl font-bold text-slate-800">{selectedProduct.name}</h2>
+                        <p className="text-slate-500 mt-2">{selectedProduct.description}</p>
                       </div>
                       <div className="flex justify-between items-center pt-4 border-t">
-                         <span className="text-gray-400 font-medium">Precio Unitario</span>
+                         <span className="text-slate-400 font-medium">Precio Unitario</span>
                          <span className="text-3xl font-bold text-indigo-600">${selectedProduct.price.toFixed(2)}</span>
                       </div>
                       <button onClick={() => setStep(2)} className="w-full py-4 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition">Siguiente</button>
@@ -226,7 +242,7 @@ const PublicMenu: React.FC<PublicMenuProps> = ({ businesses, products, addOrder 
                          </div>
                       </div>
                       <div className="flex gap-4 pt-4">
-                        <button onClick={() => setStep(1)} className="flex-1 py-4 text-gray-500 font-bold">Volver</button>
+                        <button onClick={() => setStep(1)} className="flex-1 py-4 text-slate-400 font-bold hover:bg-slate-50 rounded-2xl transition">Volver</button>
                         <button onClick={() => setStep(3)} disabled={!customerInfo.name || !customerInfo.phone} className="flex-[2] py-4 bg-indigo-600 text-white font-bold rounded-2xl disabled:opacity-50 transition-all shadow-lg">Siguiente</button>
                       </div>
                    </div>
@@ -240,7 +256,7 @@ const PublicMenu: React.FC<PublicMenuProps> = ({ businesses, products, addOrder 
                            <button 
                              key={method}
                              onClick={() => setCustomerInfo({...customerInfo, payment: method})}
-                             className={`p-4 border rounded-2xl text-xs font-bold transition flex flex-col items-center gap-2 ${customerInfo.payment === method ? 'border-indigo-600 bg-indigo-50 text-indigo-600 ring-2 ring-indigo-600' : 'border-slate-100 text-slate-400 bg-slate-50'}`}
+                             className={`p-4 border rounded-2xl text-xs font-bold transition flex flex-col items-center gap-2 ${customerInfo.payment === method ? 'border-indigo-600 bg-indigo-50 text-indigo-600 ring-2 ring-indigo-600' : 'border-slate-100 text-slate-400 bg-slate-50 hover:border-slate-300'}`}
                            >
                              <div className={`w-3 h-3 rounded-full border-2 ${customerInfo.payment === method ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300'}`}></div>
                              {method}
@@ -251,10 +267,10 @@ const PublicMenu: React.FC<PublicMenuProps> = ({ businesses, products, addOrder 
                          <div className="flex justify-between text-sm text-slate-500"><span>Subtotal</span><span>${selectedProduct.price.toFixed(2)}</span></div>
                          <div className="flex justify-between text-sm text-slate-500"><span>Impuestos (IVA {selectedBusiness.iva}%)</span><span>${(selectedProduct.price * (selectedBusiness.iva || 0) / 100).toFixed(2)}</span></div>
                          <div className="flex justify-between text-sm text-slate-500"><span>Domicilio</span><span className="text-indigo-600 font-bold">${selectedBusiness.deliveryValue?.toFixed(2)}</span></div>
-                         <div className="flex justify-between font-extrabold text-2xl pt-4 border-t text-slate-800"><span>Total</span><span>${(selectedProduct.price + (selectedProduct.price * (selectedBusiness.iva || 0) / 100) + (selectedBusiness.deliveryValue || 0)).toFixed(2)}</span></div>
+                         <div className="flex justify-between font-extrabold text-2xl pt-4 border-t border-slate-200 text-slate-800"><span>Total</span><span>${(selectedProduct.price + (selectedProduct.price * (selectedBusiness.iva || 0) / 100) + (selectedBusiness.deliveryValue || 0)).toFixed(2)}</span></div>
                       </div>
                       <div className="flex gap-4">
-                        <button onClick={() => setStep(2)} className="flex-1 py-4 text-gray-500 font-bold">Volver</button>
+                        <button onClick={() => setStep(2)} className="flex-1 py-4 text-slate-400 font-bold hover:bg-slate-50 rounded-2xl transition">Volver</button>
                         <button onClick={handlePlaceOrder} className="flex-[2] py-4 bg-emerald-600 text-white font-bold rounded-2xl shadow-xl shadow-emerald-200 transition-transform active:scale-95">Confirmar Pedido</button>
                       </div>
                    </div>

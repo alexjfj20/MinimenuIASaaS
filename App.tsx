@@ -25,6 +25,12 @@ const App: React.FC = () => {
 
     const savedOrders = localStorage.getItem('saas_orders');
     if (savedOrders) setOrders(JSON.parse(savedOrders));
+
+    // Detección de ruta para menú público vía URL Params
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('business')) {
+      setView('publicmenu');
+    }
   }, []);
 
   useEffect(() => {
