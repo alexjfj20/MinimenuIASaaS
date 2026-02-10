@@ -1,0 +1,7 @@
+{
+  "name": "SaaS Multi-Negocios IA",
+  "description": "Plataforma multi-tenant para negocios con gestión de menú digital, pedidos e IA por voz para creación de productos.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
