@@ -12,6 +12,32 @@ export interface Plan {
   maxProducts: number;
   maxVoiceAI: number;
   features: string[];
+  hotmartUrl?: string; // Nuevo: Link de pago Hotmart
+}
+
+export interface HybridPlan {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  basePrice: number;
+  pricePerOrder: number;
+  currency: string;
+  features: string[];
+  isActive: boolean;
+  isPopular?: boolean;
+  hotmartUrl?: string; // Nuevo: Link de pago Hotmart
+}
+
+export interface GlobalPaymentConfig {
+  nequi: { enabled: boolean; accountNumber: string; accountHolder: string; instructions: string; qrImage?: string };
+  bancolombia: { enabled: boolean; accountNumber: string; accountHolder: string; instructions: string; qrImage?: string };
+  daviplata: { enabled: boolean; accountNumber: string; accountHolder: string; instructions: string; qrImage?: string };
+  breB: { enabled: boolean; accountKey: string; instructions: string; qrImage?: string };
+  stripe: { enabled: boolean; publicKey: string; secretKey: string; mode: 'sandbox' | 'production'; instructions: string };
+  mercadoPago: { enabled: boolean; publicKey: string; accessToken: string; mode: 'sandbox' | 'production'; instructions: string; qrImage?: string };
+  paypal: { enabled: boolean; clientId: string; secretKey: string; mode: 'sandbox' | 'production'; instructions: string; qrImage?: string };
+  hotmartGlobal: { enabled: boolean; instructions: string };
 }
 
 export interface Business {
@@ -22,12 +48,17 @@ export interface Business {
   phone: string;
   location: string;
   planId: PlanType;
+  hybridPlanId?: string;
   logo: string;
   avatar?: string;
   banner?: string;
   iva?: number;
   deliveryValue?: number;
   googleMapsIframe?: string;
+  menuSlug?: string;
+  menuSlugActive?: boolean;
+  customShareMessage?: string;
+  customShareImageUrl?: string;
   socials: {
     whatsapp?: string;
     instagram?: string;

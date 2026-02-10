@@ -1,5 +1,5 @@
 
-import { Plan, PlanType, Business } from './types';
+import { Plan, PlanType, Business, HybridPlan } from './types';
 
 export const PLANS: Record<PlanType, Plan> = {
   [PlanType.BASIC]: {
@@ -27,6 +27,32 @@ export const PLANS: Record<PlanType, Plan> = {
     features: ['Todo Ilimitado', 'Soporte Prioritario', 'Personalización Total']
   }
 };
+
+export const MOCK_HYBRID_PLANS: HybridPlan[] = [
+  {
+    id: 'hp1',
+    name: 'Plan Crecimiento',
+    slug: 'plan-crecimiento',
+    description: 'Costo base bajo con comisión por pedido exitoso.',
+    basePrice: 15.00,
+    pricePerOrder: 0.50,
+    currency: 'USD',
+    features: ['Productos Ilimitados', 'Soporte WhatsApp', 'Panel de Analítica'],
+    isActive: true,
+    isPopular: true
+  },
+  {
+    id: 'hp2',
+    name: 'Plan Escala',
+    slug: 'plan-escala',
+    description: 'Ideal para negocios de alto volumen.',
+    basePrice: 45.00,
+    pricePerOrder: 0.25,
+    currency: 'USD',
+    features: ['Todo Ilimitado', 'API de Domicilios', 'Gestión Multi-Sucursal'],
+    isActive: true
+  }
+];
 
 export const MOCK_BUSINESSES: Business[] = [
   {
