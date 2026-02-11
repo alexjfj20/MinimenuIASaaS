@@ -1,84 +1,191 @@
 
-import React, { useState, useEffect } from 'react';
-import { AppView, Business, PlanType, Product, Order, UserSession } from './types';
-import { MOCK_BUSINESSES, PLANS } from './constants';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { AppView, Business, Product, Order, UserSession } from './types';
+import { MOCK_BUSINESSES } from './constants';
 import LandingPage from './views/LandingPage';
 import RegistrationForm from './views/RegistrationForm';
+import LoginView from './views/LoginView';
 import SuperAdminPanel from './views/SuperAdminPanel';
 import BusinessAdminPanel from './views/BusinessAdminPanel';
 import PublicMenu from './views/PublicMenu';
+import { supabase } from './lib/supabaseClient';
+import { businessService } from './services/businessService';
+import { productService } from './services/productService';
+import { orderService } from './services/orderService';
 
 const App: React.FC = () => {
   const [view, setView] = useState<AppView>('landing');
   const [session, setSession] = useState<UserSession | null>(null);
-  const [businesses, setBusinesses] = useState<Business[]>(MOCK_BUSINESSES);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  const isSyncing = useRef(false);
+  const SUPER_ADMIN_EMAIL = 'alexjfweb@gmail.com';
 
-  // Simple state persistence in LocalStorage
-  useEffect(() => {
-    const savedBusinesses = localStorage.getItem('saas_businesses');
-    if (savedBusinesses) setBusinesses(JSON.parse(savedBusinesses));
-
-    const savedProducts = localStorage.getItem('saas_products');
-    if (savedProducts) setProducts(JSON.parse(savedProducts));
-
-    const savedOrders = localStorage.getItem('saas_orders');
-    if (savedOrders) setOrders(JSON.parse(savedOrders));
-
-    // Detección de ruta para menú público vía URL Params
-    const params = new URLSearchParams(window.location.search);
-    if (params.has('business')) {
-      setView('publicmenu');
+  const loadAdminData = useCallback(async (businessId: string) => {
+    try {
+      const [dbProducts, dbOrders] = await Promise.all([
+        productService.getProducts(businessId).catch(() => []),
+        orderService.getOrders(businessId).catch(() => [])
+      ]);
+      setProducts(dbProducts);
+      setOrders(dbOrders);
+    } catch (err) {
+      console.error("Error cargando datos de admin:", err);
     }
   }, []);
 
+  const syncState = useCallback(async (user: any) => {
+    const params = new URLSearchParams(window.location.search);
+    
+    // GUARDIA: Si estamos viendo un menú público, no cambiar la vista aunque el usuario esté logueado
+    if (params.has('business')) {
+      setLoading(false);
+      return;
+    }
+
+    if (isSyncing.current) return;
+    isSyncing.current = true;
+    
+    try {
+      if (!user) {
+        setSession(null);
+        setBusinesses(MOCK_BUSINESSES);
+        if (!params.has('business')) setView('landing');
+        setLoading(false);
+        return;
+      }
+
+      const isSuperAdmin = user.email === SUPER_ADMIN_EMAIL;
+      const cloudBusinesses = await businessService.getBusinesses(
+        isSuperAdmin ? undefined : user.id
+      );
+
+      setBusinesses(cloudBusinesses);
+
+      if (isSuperAdmin) {
+        setSession({ role: 'superadmin' });
+        setView('superadmin');
+      } else if (cloudBusinesses.length > 0) {
+        const myBusiness = cloudBusinesses[0];
+        setSession({ role: 'businessadmin', businessId: myBusiness.id });
+        await loadAdminData(myBusiness.id);
+        setView('businessadmin');
+      } else {
+        setSession({ role: 'businessadmin' });
+        setView('register');
+      }
+    } catch (err: any) {
+      console.error("Error en sincronización:", err);
+    } finally {
+      isSyncing.current = false;
+      setLoading(false);
+    }
+  }, [loadAdminData]);
+
   useEffect(() => {
-    localStorage.setItem('saas_businesses', JSON.stringify(businesses));
-    localStorage.setItem('saas_products', JSON.stringify(products));
-    localStorage.setItem('saas_orders', JSON.stringify(orders));
-  }, [businesses, products, orders]);
+    let mounted = true;
 
-  const handleRegister = (newBusiness: Business) => {
-    setBusinesses([...businesses, newBusiness]);
-    setSession({ role: 'businessadmin', businessId: newBusiness.id });
-    setView('businessadmin');
-  };
+    const initializeApp = async () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        
+        // Prioridad 1: Vista pública (Detección de ?business=)
+        if (params.has('business')) {
+          if (mounted) {
+            setView('publicmenu');
+            setLoading(false);
+          }
+          // No hacemos return aquí para que la sesión se cargue en segundo plano
+        }
 
-  const handleLogin = (role: 'superadmin' | 'businessadmin', businessId?: string) => {
-    setSession({ role, businessId });
-    setView(role === 'superadmin' ? 'superadmin' : 'businessadmin');
-  };
+        const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (mounted) {
+          if (currentSession?.user) {
+            await syncState(currentSession.user);
+          } else {
+            setLoading(false);
+            if (!params.has('business')) setView('landing');
+          }
+        }
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, sbSession) => {
+          if (!mounted) return;
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            if (sbSession?.user) await syncState(sbSession.user);
+          } else if (event === 'SIGNED_OUT') {
+            setSession(null);
+            setLoading(false);
+            if (!params.has('business')) setView('landing');
+          }
+        });
+
+        return () => { subscription.unsubscribe(); };
+      } catch (err) {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    initializeApp();
+    return () => { mounted = false; };
+  }, [syncState]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+        <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
+        <p className="mt-6 text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] animate-pulse">Sincronizando...</p>
+      </div>
+    );
+  }
 
   const currentBusiness = session?.businessId ? businesses.find(b => b.id === session.businessId) : null;
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {view === 'landing' && <LandingPage setView={setView} onLogin={handleLogin} />}
-      {view === 'register' && <RegistrationForm onRegister={handleRegister} setView={setView} />}
-      {view === 'superadmin' && (
-        <SuperAdminPanel 
-          businesses={businesses} 
-          setBusinesses={setBusinesses} 
-          onLogout={() => { setSession(null); setView('landing'); }}
-        />
+      {view === 'landing' && <LandingPage setView={setView} />}
+      {view === 'login' && <LoginView setView={setView} />}
+      {view === 'register' && <RegistrationForm onRegister={async (data) => {
+        setLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const created = await businessService.createBusiness(data, user.id);
+          setBusinesses(prev => [created, ...prev]);
+          setSession({ role: 'businessadmin', businessId: created.id });
+          await loadAdminData(created.id);
+          setView('businessadmin');
+        }
+        setLoading(false);
+      }} setView={setView} />}
+      
+      {view === 'superadmin' && session?.role === 'superadmin' && (
+        <SuperAdminPanel businesses={businesses} setBusinesses={setBusinesses} onLogout={() => supabase.auth.signOut()} />
       )}
+      
       {view === 'businessadmin' && currentBusiness && (
         <BusinessAdminPanel 
           business={currentBusiness}
           setBusinesses={setBusinesses}
-          products={products.filter(p => p.businessId === currentBusiness.id)}
+          products={products}
           setProducts={setProducts}
-          orders={orders.filter(o => o.businessId === currentBusiness.id)}
+          orders={orders}
           setOrders={setOrders}
-          onLogout={() => { setSession(null); setView('landing'); }}
+          onLogout={() => supabase.auth.signOut()}
         />
       )}
+
       {view === 'publicmenu' && (
         <PublicMenu 
           businesses={businesses} 
           products={products}
-          addOrder={(o) => setOrders([...orders, o])}
+          addOrder={async (o) => {
+            const created = await orderService.createOrder(o);
+            setOrders(prev => [created, ...prev]);
+          }}
         />
       )}
     </div>

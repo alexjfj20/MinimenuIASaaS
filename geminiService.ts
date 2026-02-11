@@ -28,6 +28,7 @@ export async function generateProductImage(productName: string, description: str
   const apiKey = process.env.API_KEY;
   if (!apiKey) return `https://placehold.co/600x400?text=Error+API+Key`;
 
+  // Always use {apiKey: ...} for initialization
   const ai = new GoogleGenAI({ apiKey });
   try {
     const prompt = `Fotografía publicitaria profesional de "${productName}". Descripción: ${description}. Negocio: ${businessType}. Estilo: Iluminación de estudio, 8k, fondo desenfocado.`;
@@ -40,6 +41,7 @@ export async function generateProductImage(productName: string, description: str
       }
     });
 
+    // Find the image part as per guidelines
     const part = response.candidates?.[0]?.content?.parts.find(p => p.inlineData);
     if (part?.inlineData) {
       return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
@@ -58,7 +60,8 @@ export async function generateProductFromText(promptText: string) {
   const ai = new GoogleGenAI({ apiKey });
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      // Use gemini-3-pro-preview for complex reasoning and structure extraction
+      model: 'gemini-3-pro-preview',
       contents: { 
         parts: [{ text: `Genera un producto atractivo basado en: "${promptText}"` }] 
       },
@@ -69,6 +72,7 @@ export async function generateProductFromText(promptText: string) {
       },
     });
 
+    // Access .text property directly
     const text = response.text;
     if (!text) throw new Error("Respuesta de IA vacía");
     
@@ -86,7 +90,8 @@ export async function generateProductFromVoice(audioBase64: string, businessType
   const ai = new GoogleGenAI({ apiKey });
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      // Use gemini-3-pro-preview for complex reasoning and structure extraction from audio
+      model: 'gemini-3-pro-preview',
       contents: {
         parts: [
           { inlineData: { data: audioBase64, mimeType: 'audio/webm' } },
@@ -99,6 +104,7 @@ export async function generateProductFromVoice(audioBase64: string, businessType
       },
     });
 
+    // Access .text property directly
     const text = response.text;
     if (!text) throw new Error("Respuesta de voz vacía");
 

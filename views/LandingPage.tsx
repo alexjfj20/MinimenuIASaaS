@@ -4,10 +4,9 @@ import { AppView } from '../types';
 
 interface LandingPageProps {
   setView: (v: AppView) => void;
-  onLogin: (role: 'superadmin' | 'businessadmin', id?: string) => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ setView, onLogin }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ setView }) => {
   return (
     <div className="min-h-screen bg-white selection:bg-indigo-100 selection:text-indigo-900">
       {/* Navegación Refinada */}
@@ -24,14 +23,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ setView, onLogin }) => {
                 MenuAI SaaS
               </span>
             </div>
-            <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
+            <div className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
               <button className="hover:text-indigo-600 transition">Características</button>
               <button className="hover:text-indigo-600 transition">Precios</button>
               <button 
-                onClick={() => setView('publicmenu')}
-                className="hover:text-indigo-600 transition"
+                onClick={() => setView('login')}
+                className="text-indigo-600 font-bold hover:text-indigo-800 transition"
               >
-                Explorar Menús
+                Iniciar Sesión
               </button>
               <button 
                 onClick={() => setView('register')}
@@ -162,22 +161,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ setView, onLogin }) => {
               <span className="font-bold text-slate-900">MenuAI SaaS</span>
             </div>
             
-            <div className="flex items-center gap-6">
-              <button 
-                onClick={() => onLogin('superadmin')} 
-                className="text-xs font-bold text-slate-400 hover:text-indigo-600 transition tracking-widest uppercase"
-              >
-                Acceso Super Admin
-              </button>
-              <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
-              <button 
-                onClick={() => onLogin('businessadmin', 'b1')} 
-                className="text-xs font-bold text-slate-400 hover:text-indigo-600 transition tracking-widest uppercase"
-              >
-                Demo Admin Negocio
-              </button>
-            </div>
-
             <p className="text-xs text-slate-400 font-medium">
               © {new Date().getFullYear()} MenuAI Solutions. Hecho con pasión por el comercio local.
             </p>

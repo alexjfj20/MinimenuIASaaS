@@ -1,3 +1,4 @@
+
 export enum PlanType {
   BASIC = 'BASIC',
   PRO = 'PRO',
@@ -144,7 +145,7 @@ export interface Order {
   createdAt: number;
 }
 
-export type AppView = 'landing' | 'register' | 'superadmin' | 'businessadmin' | 'publicmenu';
+export type AppView = 'landing' | 'register' | 'login' | 'superadmin' | 'businessadmin' | 'publicmenu';
 
 export interface UserSession {
   role: 'superadmin' | 'businessadmin' | 'customer';
