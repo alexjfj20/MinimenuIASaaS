@@ -1,0 +1,1196 @@
+Perfecto, ya vi tu imagen 👍
+Tu SaaS es **multi-negocio** y lo que quieres es poder **activar Integraciones, Servicios y Módulos según lo que cada cliente solicite** desde el panel Super Admin.
+
+Te lo explico a nivel funcional (lógica SaaS), no código, para que entiendas cómo se estructura 👇
+
+---
+
+# 🧠 1️⃣ Concepto base (cómo debe funcionar)
+
+Debes manejar **3 catálogos maestros** (globales del sistema):
+
+* Integraciones → WhatsApp, Stripe, Google, etc.
+* Servicios → Hosting, Soporte IA, SEO, etc.
+* Módulos → Menú digital, Reservas, Ecommerce, etc.
+
+Y luego una relación por negocio:
+
+* Qué integraciones tiene activas
+* Qué servicios tiene activos
+* Qué módulos tiene activos
+
+---
+
+# 🗄️ 2️⃣ Estructura de base de datos (modelo lógico)
+
+### Tabla negocios
+
+```
+negocios
+- id
+- nombre
+- tipo
+- estado
+```
+
+### Tabla integraciones (catálogo global)
+
+```
+integraciones
+- id
+- nombre
+- descripcion
+- estado
+```
+
+### Tabla servicios
+
+```
+servicios
+- id
+- nombre
+- descripcion
+- precio
+- estado
+```
+
+### Tabla modulos
+
+```
+modulos
+- id
+- nombre
+- descripcion
+- estado
+```
+
+---
+
+# 🔗 3️⃣ Tablas relacionales (asignación por negocio)
+
+Aquí activas lo que cada cliente compra 👇
+
+### Negocio → Integraciones
+
+```
+negocio_integraciones
+- id
+- negocio_id
+- integracion_id
+- estado (activo / inactivo)
+- fecha_activacion
+```
+
+### Negocio → Servicios
+
+```
+negocio_servicios
+- id
+- negocio_id
+- servicio_id
+- estado
+```
+
+### Negocio → Módulos
+
+```
+negocio_modulos
+- id
+- negocio_id
+- modulo_id
+- estado
+```
+
+---
+
+# ⚙️ 4️⃣ Flujo en tu panel (Super Admin)
+
+Cuando entras a:
+
+👉 Negocios → Gestionar → “Tía Toña”
+
+Debes tener 3 pestañas:
+
+* Integraciones
+* Servicios
+* Módulos
+
+---
+
+# 🔌 5️⃣ Cómo agregar INTEGRACIONES a un negocio
+
+### Flujo:
+
+1. Seleccionas negocio
+2. Vas a pestaña “Integraciones”
+3. Listas todas las integraciones del sistema
+4. Activas con switch o checkbox
+
+Ejemplo UI:
+
+```
+[✔] WhatsApp API
+[ ] Stripe
+[✔] Google Maps
+```
+
+Al guardar:
+
+→ Insertas en `negocio_integraciones`
+
+---
+
+# 🧩 6️⃣ Cómo agregar SERVICIOS
+
+Servicios suelen ser **facturables** o de soporte.
+
+Ejemplo:
+
+* Hosting
+* Soporte técnico
+* SEO mensual
+* IA automatización
+
+Flujo:
+
+1. Seleccionas negocio
+2. Pestaña “Servicios”
+3. Botón → “Agregar servicio”
+4. Seleccionas del catálogo
+5. Defines:
+
+* Precio
+* Vigencia
+* Estado
+
+Se guarda en:
+
+`negocio_servicios`
+
+---
+
+# 🧱 7️⃣ Cómo activar MÓDULOS
+
+Los módulos son funcionalidades del sistema.
+
+Ejemplos:
+
+* Menú digital
+* Tienda online
+* Reservas
+* Facturación
+* CRM
+* Domicilios
+
+Flujo:
+
+1. Gestionar negocio
+2. Pestaña “Módulos”
+3. Lista de módulos
+4. Activar / Desactivar
+
+Se guarda en:
+
+`negocio_modulos`
+
+---
+
+# 🔐 8️⃣ Cómo afecta esto al sistema (muy importante)
+
+Tu app debe validar permisos así:
+
+### Ejemplo lógico
+
+```
+Si negocio tiene módulo "Menú Digital"
+→ Mostrar menú
+
+Si NO
+→ Bloquear acceso
+```
+
+Igual con integraciones:
+
+```
+Si tiene WhatsApp activo
+→ Mostrar botón pedir por WhatsApp
+```
+
+---
+
+# 🧭 9️⃣ Estructura visual recomendada en tu SaaS
+
+Dentro de:
+
+👉 Negocios → Gestionar
+
+Panel así:
+
+```
+┌──────────────────────────┐
+│  Negocio: Tía Toña       │
+├──────────────────────────┤
+│ Integraciones            │
+│ Servicios                │
+│ Módulos                  │
+│ Facturación              │
+└──────────────────────────┘
+```
+
+---
+
+# 🚀 🔟 Flujo real de activación con cliente
+
+Ejemplo cliente restaurante:
+
+Solicita:
+
+* Menú digital
+* WhatsApp
+* Hosting
+* IA descripciones
+
+Tú haces:
+
+1️⃣ Creas negocio
+2️⃣ Activas módulos:
+
+* Menú digital
+
+3️⃣ Activas integraciones:
+
+* WhatsApp
+
+4️⃣ Activas servicios:
+
+* Hosting
+* IA
+
+Listo ✅
+
+---
+
+# 🧩 11️⃣ Diferencia clara (resumen)
+
+| Tipo        | Qué es               | Ejemplo          |
+| ----------- | -------------------- | ---------------- |
+| Integración | Conecta con externos | WhatsApp, Stripe |
+| Servicio    | Algo que le cobras   | Hosting, Soporte |
+| Módulo      | Función del sistema  | Menú, Ecommerce  |
+
+---
+
+# 🏗️ 12️⃣ Consejo SaaS PRO
+
+Agrega:
+
+* Estado: activo / suspendido
+* Fecha activación
+* Fecha vencimiento
+* Plan asociado
+
+Así podrás automatizar cortes.
+
+---
+
+Si quieres, en el siguiente paso te explico:
+
+* Cómo diseñar la UI de activación (switches)
+* Cómo validar permisos en Next.js
+* Cómo ligar esto a planes (SaaS automático)
+
+Dime cuál sigue 👇
+
+
+
+
+******************************************************
+parte 2
+*******************************************************
+Perfecto 👌
+Ahora vamos a lo importante de verdad en un SaaS escalable:
+
+👉 **Cómo ligar Integraciones + Servicios + Módulos a PLANES para que todo se active automático**
+
+Esto es lo que convierte tu app en **SaaS automático** y no en activación manual.
+
+---
+
+# 🧠 1️⃣ Concepto base
+
+Un **Plan** es un paquete que ya trae incluido:
+
+* Módulos
+* Integraciones
+* Servicios
+* Límites
+* Precio
+
+Ejemplo:
+
+| Plan    | Incluye         |
+| ------- | --------------- |
+| Básico  | Menú digital    |
+| Pro     | Menú + WhatsApp |
+| Premium | Todo + IA       |
+
+Cuando asignas el plan…
+
+👉 El sistema activa todo solo.
+
+---
+
+# 🗄️ 2️⃣ Estructura de base de datos
+
+### Tabla planes
+
+```
+planes
+- id
+- nombre
+- precio
+- tipo (mensual / anual / único)
+- estado
+```
+
+---
+
+# 🔗 3️⃣ Relación Plan → Módulos
+
+```
+plan_modulos
+- id
+- plan_id
+- modulo_id
+```
+
+Ejemplo:
+
+| plan   | módulo   |
+| ------ | -------- |
+| Básico | Menú     |
+| Pro    | Menú     |
+| Pro    | Reservas |
+
+---
+
+# 🔗 4️⃣ Plan → Integraciones
+
+```
+plan_integraciones
+- id
+- plan_id
+- integracion_id
+```
+
+Ejemplo:
+
+| plan    | integración |
+| ------- | ----------- |
+| Pro     | WhatsApp    |
+| Premium | WhatsApp    |
+| Premium | Stripe      |
+
+---
+
+# 🔗 5️⃣ Plan → Servicios
+
+```
+plan_servicios
+- id
+- plan_id
+- servicio_id
+```
+
+Ejemplo:
+
+| plan    | servicio |
+| ------- | -------- |
+| Premium | Hosting  |
+| Premium | Soporte  |
+| Premium | IA       |
+
+---
+
+# ⚙️ 6️⃣ Flujo automático al crear negocio
+
+Cuando creas o asignas plan:
+
+```
+Negocio → Selecciona Plan
+```
+
+Tu backend hace:
+
+### Paso 1
+
+Busca todo lo que incluye el plan:
+
+```
+SELECT * FROM plan_modulos WHERE plan_id = X
+SELECT * FROM plan_integraciones WHERE plan_id = X
+SELECT * FROM plan_servicios WHERE plan_id = X
+```
+
+---
+
+### Paso 2
+
+Inserta automático en tablas del negocio:
+
+```
+negocio_modulos
+negocio_integraciones
+negocio_servicios
+```
+
+Sin que tú actives manual.
+
+---
+
+# 🔄 7️⃣ Ejemplo real
+
+Cliente compra:
+
+👉 Plan PRO
+
+Plan PRO incluye:
+
+* Menú digital
+* Reservas
+* WhatsApp
+* Hosting
+
+Sistema ejecuta:
+
+```
+Insert negocio_modulos:
+- Menú
+- Reservas
+
+Insert negocio_integraciones:
+- WhatsApp
+
+Insert negocio_servicios:
+- Hosting
+```
+
+Listo ✅
+
+---
+
+# 🧩 8️⃣ Beneficio SaaS automático
+
+Sin esto:
+
+❌ Activar uno por uno
+❌ Pierdes tiempo
+❌ Error humano
+
+Con planes:
+
+✅ 1 clic
+✅ Escalable
+✅ Automatizado
+
+---
+
+# 🧭 9️⃣ UI en Super Admin
+
+Cuando creas plan:
+
+```
+Crear Plan
+Nombre: PRO
+Precio: $49
+
+Módulos:
+[✔] Menú
+[✔] Reservas
+
+Integraciones:
+[✔] WhatsApp
+
+Servicios:
+[✔] Hosting
+```
+
+Guardas → Se llena tablas plan_*.
+
+---
+
+# 🔐 🔟 Validación en el sistema
+
+Tu app NO debe mirar el plan directamente…
+
+Debe mirar lo activado en negocio.
+
+Ejemplo:
+
+```
+if negocio_modulo.includes("menu")
+→ Mostrar menú
+```
+
+¿Por qué?
+
+Porque puedes activar extras manuales.
+
+---
+
+# 🧱 11️⃣ Plan + Extras (muy importante)
+
+Cliente tiene Plan Básico pero paga extra WhatsApp.
+
+Entonces:
+
+```
+Plan activa:
+- Menú
+
+Admin activa manual:
+- WhatsApp
+```
+
+Por eso existen ambas cosas:
+
+* Planes automáticos
+* Activaciones manuales
+
+---
+
+# 💰 12️⃣ Planes ligados a facturación
+
+Puedes agregar:
+
+```
+negocio_plan
+- negocio_id
+- plan_id
+- fecha_inicio
+- fecha_fin
+- estado
+```
+
+Así puedes:
+
+* Suspender módulos si no paga
+* Renovar automático
+* Cambiar plan
+
+---
+
+# 🚀 13️⃣ Flujo completo SaaS PRO
+
+1️⃣ Creas planes
+2️⃣ Configuras qué incluye cada uno
+3️⃣ Cliente compra plan
+4️⃣ Sistema asigna plan a negocio
+5️⃣ Se activan módulos/integraciones/servicios
+6️⃣ Sistema valida accesos
+7️⃣ Facturación controla vigencia
+
+---
+
+# 🧠 Resumen simple
+
+| Elemento           | Función               |
+| ------------------ | --------------------- |
+| Plan               | Paquete               |
+| plan_modulos       | Qué módulos trae      |
+| plan_integraciones | Qué integra           |
+| plan_servicios     | Qué servicios incluye |
+| negocio_*          | Lo que tiene activo   |
+
+---
+
+Si quieres, el siguiente paso lógico sería:
+
+* Diseño de tablas SQL reales
+* Lógica backend (Next.js / Supabase)
+* Cómo cambiar de plan sin romper datos
+* Cómo suspender módulos por mora
+
+Dime cuál quieres que te explique 👇
+
+********************************************************
+prompt de parter 2
+************************************************
+Perfecto 👍 — te voy a crear un **PROMPT profesional listo para copiar y pegar** y dárselo a tu IA (Cursor, Copilot, ChatGPT, Claude, etc.) para que implemente:
+
+👉 **Ligado automático de Planes → Módulos → Integraciones → Servicios**
+⚠️ Sin romper tu app SaaS actual.
+
+---
+
+## 🧠 Prompt IA — Implementación SaaS Automático por Planes
+
+Copia desde aquí 👇
+
+---
+
+**PROMPT:**
+
+Actúa como un **Arquitecto Senior SaaS + Full-Stack Developer experto en Next.js, Supabase/Firebase y sistemas multi-tenant**.
+
+Necesito que implementes en mi aplicación SaaS existente un sistema de:
+
+👉 Ligado automático de **Planes → Módulos → Integraciones → Servicios**
+
+⚠️ MUY IMPORTANTE:
+No debes romper nada existente.
+No debes eliminar lógica actual.
+Solo extender el sistema de forma escalable y compatible.
+
+---
+
+# 🎯 Objetivo
+
+Cuando yo asigne un **Plan a un Negocio**, el sistema debe:
+
+1. Activar automáticamente los Módulos incluidos
+2. Activar automáticamente las Integraciones incluidas
+3. Activar automáticamente los Servicios incluidos
+4. Guardar todo en tablas relacionales del negocio
+5. Permitir extras manuales después
+
+---
+
+# 🏗️ Contexto de mi app
+
+La app ya tiene:
+
+* Multi-negocios
+* Panel Super Admin
+* Sección:
+
+  * Integraciones
+  * Servicios
+  * Módulos
+
+Ya existe activación manual por negocio.
+No debes eliminarla — debe coexistir con planes.
+
+---
+
+# 🗄️ Estructura que debes implementar
+
+## 1️⃣ Tabla Planes
+
+```
+planes
+- id
+- nombre
+- precio
+- tipo (mensual / anual / único)
+- estado
+- created_at
+```
+
+---
+
+## 2️⃣ Relación Plan → Módulos
+
+```
+plan_modulos
+- id
+- plan_id
+- modulo_id
+```
+
+---
+
+## 3️⃣ Relación Plan → Integraciones
+
+```
+plan_integraciones
+- id
+- plan_id
+- integracion_id
+```
+
+---
+
+## 4️⃣ Relación Plan → Servicios
+
+```
+plan_servicios
+- id
+- plan_id
+- servicio_id
+```
+
+---
+
+## 5️⃣ Relación Plan asignado a Negocio
+
+```
+negocio_planes
+- id
+- negocio_id
+- plan_id
+- fecha_inicio
+- fecha_fin
+- estado
+```
+
+---
+
+# ⚙️ Lógica que debes programar
+
+Cuando se cree o actualice:
+
+```
+Negocio + Plan asignado
+```
+
+Debes ejecutar automáticamente:
+
+---
+
+## Paso 1 — Obtener configuración del plan
+
+Consultar:
+
+* plan_modulos
+* plan_integraciones
+* plan_servicios
+
+---
+
+## Paso 2 — Insertar en negocio
+
+Insertar en:
+
+```
+negocio_modulos
+negocio_integraciones
+negocio_servicios
+```
+
+Solo si no existen (evitar duplicados).
+
+---
+
+## Paso 3 — Mantener compatibilidad
+
+Si el negocio ya tenía módulos manuales:
+
+* No eliminarlos
+* No duplicarlos
+* Solo agregar faltantes del plan
+
+---
+
+# 🧠 Reglas de negocio
+
+1. El plan activa por defecto
+2. Admin puede agregar extras manuales
+3. Extras no se eliminan al cambiar plan
+4. Si baja de plan → solo desactivar lo del plan anterior (no extras manuales)
+
+---
+
+# 🔐 Validación en frontend/backend
+
+El sistema debe validar acceso usando:
+
+```
+negocio_modulos
+negocio_integraciones
+negocio_servicios
+```
+
+NO directamente desde planes.
+
+---
+
+# 🖥️ Cambios UI requeridos
+
+En:
+
+Super Admin → Negocios → Gestionar
+
+Agregar sección:
+
+```
+Plan actual
+[ Cambiar plan ]
+```
+
+Al cambiar plan:
+
+* Ejecutar activación automática
+* Mostrar confirmación
+
+---
+
+# 🧪 Casos de prueba que debes cubrir
+
+1. Crear negocio + asignar plan
+2. Cambiar de Básico → Pro
+3. Cambiar de Pro → Básico
+4. Negocio con extras manuales
+5. Plan sin integraciones
+6. Evitar duplicados
+
+---
+
+# 🛡️ Restricciones técnicas
+
+* No eliminar tablas actuales
+* No romper APIs existentes
+* No modificar lógica de permisos actual
+* Usar migraciones seguras
+* Código escalable multi-tenant
+
+---
+
+# 📦 Entregables esperados
+
+1. Migraciones SQL
+2. Modelos / Schemas
+3. Servicios backend
+4. Endpoint asignar plan
+5. Lógica automática activación
+6. Manejo cambio de plan
+7. Validaciones
+8. Comentarios en código
+
+---
+
+# 🚀 Mejores prácticas obligatorias
+
+* Transacciones (rollback si falla)
+* Inserts masivos optimizados
+* Índices en FK
+* Soft delete / estado
+* Logs de activación
+
+---
+
+**Fin del prompt**
+
+---
+
+## ✅ Cómo usarlo
+
+Pégalo en:
+
+* Cursor
+* ChatGPT dev
+* Claude Code
+* Copilot Chat
+* Windsurf
+* Lovable
+
+Y te generará:
+
+* Tablas
+* Backend
+* Hooks
+* Automatización
+
+---
+
+Si quieres, te creo el siguiente prompt:
+
+* Migrar planes manuales → automáticos
+* Facturación ligada a planes
+* Suspensión automática por mora
+* Upgrade downgrade sin perder datos
+
+Dime cuál sigue 👇
+************************************************
+Migrar planes manuales → automáticos
+*********************************************
+Perfecto 👌 — este es el paso que sigue para que tu SaaS evolucione:
+
+👉 Pasar de **planes activados manualmente** → a **planes automáticos ligados a módulos, integraciones y servicios**
+Sin romper lo que ya funciona.
+
+Te dejo el **PROMPT listo para copiar y pegar** y dárselo a tu IA dev 👇
+
+---
+
+Actúa como un **Arquitecto Senior SaaS + Ingeniero Full-Stack experto en sistemas multi-tenant (Next.js + Supabase/Firebase + SQL)**.
+
+Necesito que migres mi sistema actual de **Planes Manuales** a un sistema de **Planes Automáticos ligados a Módulos, Integraciones y Servicios**, sin romper la aplicación existente.
+
+---
+
+# 🎯 Objetivo de la migración
+
+Actualmente:
+
+* Los planes se asignan manualmente.
+* Los módulos, integraciones y servicios se activan uno por uno por negocio.
+
+Necesito que ahora:
+
+1. Cada Plan tenga módulos incluidos.
+2. Cada Plan tenga integraciones incluidas.
+3. Cada Plan tenga servicios incluidos.
+4. Al asignar el plan → todo se active automático.
+5. Mantener compatibilidad con activaciones manuales existentes.
+
+---
+
+# 🧠 Contexto del sistema actual
+
+Mi SaaS ya tiene:
+
+* Multi-negocios
+* Activación manual de:
+
+  * Módulos
+  * Integraciones
+  * Servicios
+* Panel Super Admin funcional
+
+⚠️ No debes eliminar nada existente.
+⚠️ Solo migrar y extender.
+
+---
+
+# 🗄️ Estructura nueva a implementar
+
+Crear si no existen:
+
+## Tabla planes
+
+* id
+* nombre
+* precio
+* tipo
+* estado
+* created_at
+
+---
+
+## Relación Plan → Módulos
+
+Tabla: plan_modulos
+
+* id
+* plan_id
+* modulo_id
+
+---
+
+## Relación Plan → Integraciones
+
+Tabla: plan_integraciones
+
+* id
+* plan_id
+* integracion_id
+
+---
+
+## Relación Plan → Servicios
+
+Tabla: plan_servicios
+
+* id
+* plan_id
+* servicio_id
+
+---
+
+## Plan asignado a negocio
+
+Tabla: negocio_planes
+
+* id
+* negocio_id
+* plan_id
+* fecha_inicio
+* fecha_fin
+* estado
+
+---
+
+# 🔄 Lógica de migración requerida
+
+Debes crear un script/migración que:
+
+---
+
+## Paso 1 — Detectar negocios con plan manual
+
+Leer negocios que tengan:
+
+* plan asignado manualmente
+* módulos activos
+* integraciones activas
+* servicios activos
+
+---
+
+## Paso 2 — Mapear configuración actual
+
+Por cada plan existente:
+
+1. Analizar qué módulos tienen sus negocios
+2. Analizar qué integraciones
+3. Analizar qué servicios
+
+Construir configuración automática equivalente.
+
+---
+
+## Paso 3 — Poblar tablas plan_*
+
+Insertar:
+
+* plan_modulos
+* plan_integraciones
+* plan_servicios
+
+Basado en lo que ya usan los negocios.
+
+---
+
+## Paso 4 — No duplicar datos
+
+Reglas:
+
+* No duplicar módulos activos
+* No eliminar activaciones manuales
+* Solo crear relaciones faltantes
+
+---
+
+## Paso 5 — Activación automática futura
+
+Una vez migrado:
+
+Cuando se asigne un plan nuevo:
+
+1. Leer configuración del plan
+2. Insertar en:
+
+   * negocio_modulos
+   * negocio_integraciones
+   * negocio_servicios
+3. Evitar duplicados
+
+---
+
+# 🧠 Manejo de EXTRAS manuales
+
+Muy importante:
+
+Si un negocio tenía extras manuales:
+
+Ejemplo:
+
+Plan Básico incluía:
+
+* Menú
+
+Pero el negocio también tenía:
+
+* WhatsApp (manual)
+
+Entonces:
+
+* WhatsApp NO debe eliminarse.
+* Debe marcarse como “extra”.
+
+---
+
+# 🔐 Reglas de downgrade / upgrade
+
+Debes implementar lógica para:
+
+## Upgrade
+
+* Agregar nuevos módulos del plan superior
+* No eliminar extras existentes
+
+## Downgrade
+
+* Desactivar solo lo incluido en el plan anterior
+* Mantener extras manuales
+
+---
+
+# 🧪 Casos de prueba obligatorios
+
+1. Negocio con plan manual + módulos manuales
+2. Negocio sin plan pero con módulos activos
+3. Cambio de plan después de migración
+4. Plan con cero integraciones
+5. Evitar duplicados
+6. Rollback si falla migración
+
+---
+
+# 🛡️ Seguridad de la migración
+
+Debes:
+
+* Usar transacciones
+* Hacer backup lógico previo
+* No borrar datos existentes
+* Usar scripts idempotentes
+
+---
+
+# 🖥️ Cambios UI requeridos
+
+En Super Admin:
+
+1. Editor de Plan:
+
+   * Seleccionar módulos incluidos
+   * Integraciones
+   * Servicios
+
+2. Vista negocio:
+
+   * Mostrar plan actual
+   * Mostrar extras manuales
+
+---
+
+# 📦 Entregables esperados
+
+1. Migraciones SQL
+2. Script de migración histórica
+3. Modelos actualizados
+4. Servicios backend automáticos
+5. Endpoint asignar/cambiar plan
+6. Lógica upgrade/downgrade
+7. Logs de migración
+8. Documentación técnica
+
+---
+
+# 🚀 Mejores prácticas obligatorias
+
+* Multi-tenant safe
+* Soft delete
+* Índices FK
+* Validación duplicados
+* Código desacoplado
+* Comentarios técnicos
+
+---
+
+Implementa la migración completa lista para producción, sin romper funcionalidades existentes y permitiendo rollback seguro.
+
+---
+
+Si quieres, el siguiente prompt que te preparo sería el más potente del SaaS:
+
+* 💳 Facturación automática ligada a planes
+* 🔒 Suspensión automática por mora
+* 🔁 Renovaciones automáticas
+* 📊 Métricas MRR / ARR
+
+Dime cuál sigue y te lo creo listo para copiar 👇
+
+

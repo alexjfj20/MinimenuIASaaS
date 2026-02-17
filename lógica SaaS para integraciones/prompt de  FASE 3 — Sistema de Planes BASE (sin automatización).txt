@@ -1,0 +1,296 @@
+ FASE 3 — Sistema de Planes BASE (sin automatización)
+**************************************************************
+
+Perfecto 👌 — vamos paso a paso como debe ser para no romper tu SaaS.
+
+Aquí tienes el **PROMPT listo para copiar y pegar** para que tu IA implemente únicamente la:
+
+👉 **FASE 3 — Sistema de Planes BASE (sin automatización)**
+
+Esto solo crea la estructura de planes y asignación a negocios, sin tocar módulos ni integraciones.
+
+---
+
+comienza aqui el prompt:
+
+
+
+Actúa como un **Arquitecto SaaS Senior + Full-Stack Developer experto en Next.js, Supabase/Firebase y sistemas multi-tenant**.
+
+Necesito que implementes en mi aplicación SaaS existente la **FASE 3 — Sistema de Planes Base**, sin automatizaciones, sin romper funcionalidades actuales y manteniendo compatibilidad con todo el sistema.
+
+---
+
+# 🎯 Objetivo
+
+Implementar únicamente la base estructural de planes para que:
+
+1. Pueda crear planes desde el panel Super Admin.
+2. Pueda asignar un plan a un negocio.
+3. Pueda visualizar el plan actual del negocio.
+4. No se active nada automático aún.
+5. No se modifiquen módulos, integraciones ni servicios existentes.
+
+---
+
+# ⚠️ Restricciones críticas
+
+* No eliminar tablas actuales.
+* No modificar lógica de permisos.
+* No automatizar activaciones.
+* No tocar negocio_modulos, negocio_integraciones ni negocio_servicios.
+* Solo crear estructura de planes y su asignación.
+
+---
+
+# 🗄️ Base de datos a implementar
+
+## 1️⃣ Tabla: planes
+
+Crear tabla:
+
+* id (PK)
+* nombre (string)
+* descripcion (text)
+* precio (decimal)
+* tipo (enum: mensual | anual | único)
+* estado (activo | inactivo)
+* created_at (timestamp)
+* updated_at (timestamp)
+
+Agregar índices por:
+
+* estado
+* tipo
+
+---
+
+## 2️⃣ Tabla: negocio_planes
+
+Relación entre negocio y plan.
+
+Campos:
+
+* id (PK)
+* negocio_id (FK → negocios.id)
+* plan_id (FK → planes.id)
+* fecha_inicio (date)
+* fecha_fin (date nullable)
+* estado (activo | vencido | cancelado)
+* created_at
+* updated_at
+
+Reglas:
+
+* Un negocio solo puede tener 1 plan activo.
+* Permitir historial de planes anteriores.
+
+---
+
+# ⚙️ Backend / lógica requerida
+
+Implementar servicios para:
+
+---
+
+## Crear plan
+
+Endpoint / servicio:
+
+```
+POST /planes
+```
+
+Debe permitir:
+
+* nombre
+* descripcion
+* precio
+* tipo
+* estado
+
+Validar:
+
+* Nombre único
+* Precio ≥ 0
+
+---
+
+## Listar planes
+
+```
+GET /planes
+```
+
+Mostrar:
+
+* Cantidad de negocios por plan
+* Estado
+* Precio
+
+---
+
+## Asignar plan a negocio
+
+Endpoint:
+
+```
+POST /negocios/{id}/asignar-plan
+```
+
+Lógica:
+
+1. Verificar que el negocio exista.
+2. Verificar que el plan exista.
+3. Desactivar plan activo anterior.
+4. Insertar nuevo en negocio_planes.
+5. Marcar estado = activo.
+
+⚠️ No activar módulos ni integraciones.
+
+---
+
+## Obtener plan actual de negocio
+
+```
+GET /negocios/{id}/plan
+```
+
+Debe devolver:
+
+* Nombre plan
+* Precio
+* Tipo
+* Fecha inicio
+* Estado
+
+---
+
+# 🖥️ Cambios UI requeridos
+
+## 1️⃣ Sección nueva: Planes
+
+En Super Admin sidebar:
+
+```
+Planes
+```
+
+Vista debe permitir:
+
+* Crear plan
+* Editar plan
+* Activar / desactivar
+* Ver negocios suscritos
+
+---
+
+## 2️⃣ En gestión de negocio
+
+Ruta:
+
+```
+Negocios → Gestionar → [Negocio]
+```
+
+Agregar bloque:
+
+```
+Plan actual: PRO
+Precio: $49
+Tipo: Mensual
+Fecha inicio: 01/02/2026
+
+[ Cambiar plan ]
+```
+
+Selector dropdown con planes activos.
+
+---
+
+# 🧪 Casos de prueba obligatorios
+
+1. Crear plan básico.
+2. Crear plan premium.
+3. Asignar plan a negocio sin plan.
+4. Cambiar plan activo.
+5. Historial de planes correcto.
+6. Negocio sin plan asignado.
+7. Plan inactivo no seleccionable.
+
+---
+
+# 🛡️ Seguridad y estabilidad
+
+Implementar:
+
+* Transacciones al cambiar plan.
+* Validación FK.
+* Soft delete opcional.
+* Logs de asignación.
+* Manejo de errores.
+
+---
+
+# 📦 Entregables esperados
+
+1. Migración SQL tablas planes y negocio_planes.
+2. Modelos / Schemas.
+3. Endpoints CRUD planes.
+4. Endpoint asignar plan.
+5. UI gestión planes.
+6. UI asignación en negocio.
+7. Historial de planes.
+8. Documentación técnica.
+
+---
+
+# 🚀 Mejores prácticas
+
+* Multi-tenant safe.
+* No hardcodear planes.
+* Preparado para futura automatización.
+* Código desacoplado de módulos.
+* Índices en FK.
+
+---
+
+Implementa únicamente la FASE 3 (Planes Base), dejando preparada la estructura para fases futuras sin automatizar activaciones ni modificar permisos actuales.
+
+
+
+
+
+---
+
+## ✅ Qué logrará este prompt
+
+Cuando tu IA lo implemente tendrás:
+
+* Sistema de planes creado
+* Plan asignable a negocios
+* Historial de planes
+* UI de gestión
+* Base lista para automatización
+
+Pero aún:
+
+❌ No activará módulos
+❌ No activará integraciones
+❌ No activará servicios
+
+(eso es Fase 5).
+
+---
+
+
+
+
+Cuando termines esta fase, el siguiente prompt que sigue es:
+
+👉 **“Ligar Plan → Módulos / Integraciones / Servicios (sin automatizar aún)”**
+
+Así avanzas seguro sin romper nada.
+
+Cuando lo tengas listo dime:
+**“Siguiente fase prompt”** 🚀

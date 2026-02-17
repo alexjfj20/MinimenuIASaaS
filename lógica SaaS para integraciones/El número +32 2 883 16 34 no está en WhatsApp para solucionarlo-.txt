@@ -1,0 +1,158 @@
+Perfecto Wilson 👍 ya revisé la imagen.
+
+El error que aparece es:
+
+> **“El número +32 2 883 16 34 no está en WhatsApp”**
+
+Y sí, confirma exactamente el diagnóstico:
+WhatsApp está interpretando **32 como código de país (Bélgica)** en vez de Colombia (+57).
+
+Ahora vamos a lo importante 👇
+Tú tienes una **app tipo SaaS**, así que la solución debe ser:
+
+* Multiempresa (multi-tenant)
+* Soportar múltiples países
+* No estar quemada solo para Colombia
+* Ser escalable y profesional
+
+Te voy a crear un **PROMPT PROFESIONAL listo para usar en Firebase Studio / AI Studio / Copilot**, enfocado a SaaS real.
+
+---
+
+# 🎯 PROMPT PROFESIONAL PARA APP SaaS (WhatsApp Phone Fix)
+
+## 📌 Objetivo
+
+Corregir de forma escalable la generación de enlaces de WhatsApp en una aplicación SaaS multiempresa, asegurando que los números:
+
+* Siempre tengan código de país
+* Sean limpiados correctamente
+* Funcionen para múltiples países
+* No generen errores como +32 (Bélgica por error)
+
+---
+
+## 🚀 PROMPT PARA IA (COPIAR Y USAR)
+
+```
+Actúa como arquitecto senior en aplicaciones SaaS multi-tenant con React + TypeScript.
+
+Necesito corregir la función que genera enlaces de WhatsApp (wa.me) en mi aplicación SaaS.
+
+Problema actual:
+WhatsApp está interpretando incorrectamente números locales como códigos de país erróneos (ej: 32 → Bélgica), porque el número se envía sin código de país correcto.
+
+Requisitos obligatorios:
+
+1. La app es SaaS multiempresa.
+2. Cada empresa puede tener un país diferente.
+3. El sistema debe:
+   - Limpiar el número (eliminar espacios, +, guiones, paréntesis).
+   - Validar si el número ya tiene código de país.
+   - Si NO lo tiene, agregar el código por defecto configurado para la empresa.
+4. El código de país NO debe estar hardcodeado (no solo 57).
+5. Debe aceptar números internacionales correctamente.
+6. Debe generar el enlace:
+   https://wa.me/{numero}?text={mensaje}
+7. Debe incluir validación final antes de abrir la ventana.
+
+Contexto:
+La empresa tiene un campo company.countryCode almacenado en base de datos (ej: "57", "52", "34").
+
+Crea:
+- Una función reutilizable llamada formatWhatsAppNumber()
+- Una función handleShareWhatsApp()
+- Código en TypeScript
+- Buenas prácticas
+- Código limpio y escalable
+
+No uses soluciones temporales.
+Quiero arquitectura correcta para SaaS.
+```
+
+---
+
+# 🏗 SOLUCIÓN PROFESIONAL PARA TU SaaS
+
+Te dejo además la implementación correcta que debería generarte la IA:
+
+```ts
+// utils/phoneFormatter.ts
+export const formatWhatsAppNumber = (
+  rawPhone: string,
+  defaultCountryCode: string
+): string | null => {
+  if (!rawPhone) return null;
+
+  // 1. Limpiar todo excepto números
+  let phone = rawPhone.replace(/\D/g, '');
+
+  // 2. Si ya empieza con el código del país configurado, lo dejamos
+  if (phone.startsWith(defaultCountryCode)) {
+    return phone;
+  }
+
+  // 3. Si parece número local (ej: 10 dígitos en LATAM)
+  if (phone.length >= 8 && phone.length <= 11) {
+    return `${defaultCountryCode}${phone}`;
+  }
+
+  // 4. Validación mínima internacional
+  if (phone.length >= 11 && phone.length <= 15) {
+    return phone;
+  }
+
+  return null;
+};
+```
+
+---
+
+### 📌 Uso en tu modal
+
+```ts
+import { formatWhatsAppNumber } from "@/utils/phoneFormatter";
+
+const handleShareWhatsApp = () => {
+  const formattedPhone = formatWhatsAppNumber(
+    invoiceData.customerPhone,
+    company.countryCode // ← viene desde tu tenant
+  );
+
+  if (!formattedPhone) {
+    alert("Número de teléfono inválido.");
+    return;
+  }
+
+  const message = `Hola, aquí está tu factura #${invoiceData.id}. Total: $${invoiceData.total.toLocaleString()}`;
+
+  const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+
+  window.open(url, "_blank");
+};
+```
+
+---
+
+# 🔥 ¿Por qué esta solución sí es SaaS real?
+
+✔ No está fija a Colombia
+✔ Soporta múltiples países
+✔ Funciona por tenant
+✔ Es reutilizable
+✔ Es escalable
+✔ Es mantenible
+✔ Evita el error +32
+✔ Arquitectura limpia
+
+---
+
+Si quieres, ahora puedo ayudarte a:
+
+* 🔐 Validarlo con libphonenumber (nivel enterprise)
+* 🌎 Hacer detección automática por país
+* 📦 Convertirlo en servicio centralizado
+* 🧠 Integrarlo con Supabase multiempresa
+* ⚙ Mejorarlo para WhatsApp Business API
+
+¿Qué nivel quieres llevar tu SaaS ahora, Wilson? 🚀

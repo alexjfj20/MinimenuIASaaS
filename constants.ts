@@ -69,14 +69,31 @@ export const MOCK_BUSINESSES: Business[] = [
     email: 'admin@burgers.com',
     phone: '3001234567',
     location: 'Calle 123, Bogotá',
+    description: 'Hamburguesas artesanales con sabor único.',
     planId: PlanType.PRO,
     logo: 'https://picsum.photos/seed/burger/200/200',
     avatar: 'https://i.pravatar.cc/150?u=b1',
     banner: 'https://picsum.photos/seed/foodbanner/1200/400',
     iva: 19,
     deliveryValue: 5000,
-    socials: { whatsapp: '3001234567', instagram: '@burgersco' },
-    paymentMethods: ['Nequi', 'Daviplata', 'Efectivo'],
+    socials: {
+      whatsapp: '3001234567',
+      instagram: '@burgersco',
+      facebook: '',
+      twitter: '',
+      tiktok: '',
+      youtube: '',
+      website: ''
+    },
+    paymentMethods: ['cash'],
+    paymentConfigs: {
+      cash: { enabled: true },
+      nequi: { enabled: false, accountHolder: '', accountNumber: '', qrImage: '' },
+      daviplata: { enabled: false, accountHolder: '', accountNumber: '', qrImage: '' },
+      bancolombia: { enabled: false, accountHolder: '', accountNumber: '', qrImage: '' },
+      mercadoPago: { enabled: false, publicKey: '', accessToken: '', mode: 'sandbox' },
+      stripe: { enabled: false, publicKey: '', secretKey: '', mode: 'sandbox' }
+    },
     usage: { voiceAICount: 12, productCount: 4 }
   }
 ];

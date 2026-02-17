@@ -15,6 +15,29 @@ export interface Plan {
   hotmartUrl?: string;
 }
 
+export interface SaasPlan {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  type: 'mensual' | 'anual' | 'unico';
+  status: 'active' | 'inactive';
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface BusinessPlanAssignment {
+  id: string;
+  businessId: string;
+  planId: string;
+  startDate: string;
+  endDate?: string;
+  status: 'active' | 'vencido' | 'cancelado';
+  planName?: string; // Para facilitar visualización
+  planPrice?: number;
+  planType?: string;
+}
+
 export interface LandingPlan {
   id: string;
   slug: string;
@@ -32,6 +55,7 @@ export interface LandingPlan {
   color: string;
   maxUsers: number;
   maxProjects: number;
+  hotmartUrl?: string;
 }
 
 export interface PlanAuditLog {
@@ -79,6 +103,15 @@ export interface SystemService {
   endpoint: string;
 }
 
+export interface Integration {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  status: 'active' | 'inactive';
+  docsUrl?: string;
+}
+
 export interface GlobalPaymentConfig {
   nequi: { enabled: boolean; accountNumber: string; accountHolder: string; instructions: string; qrImage?: string };
   bancolombia: { enabled: boolean; accountNumber: string; accountHolder: string; instructions: string; qrImage?: string };
@@ -90,6 +123,27 @@ export interface GlobalPaymentConfig {
   hotmartGlobal: { enabled: boolean; instructions: string; planUrls: Record<string, string> };
 }
 
+export interface BusinessSocials {
+  whatsapp?: string;
+  instagram?: string;
+  facebook?: string;
+  twitter?: string;
+  tiktok?: string;
+  youtube?: string;
+  website?: string;
+}
+
+export interface PaymentConfigDetail {
+  enabled: boolean;
+  accountHolder?: string;
+  accountNumber?: string;
+  qrImage?: string;
+  publicKey?: string;
+  accessToken?: string;
+  secretKey?: string;
+  mode?: 'sandbox' | 'production';
+}
+
 export interface Business {
   id: string;
   name: string;
@@ -97,6 +151,7 @@ export interface Business {
   email: string;
   phone: string;
   location: string;
+  description?: string;
   planId: PlanType;
   hybridPlanId?: string;
   logo: string;
@@ -109,16 +164,22 @@ export interface Business {
   menuSlugActive?: boolean;
   customShareMessage?: string;
   customShareImageUrl?: string;
-  socials: {
-    whatsapp?: string;
-    instagram?: string;
+  countryCode?: string; // Código de país para WhatsApp (ej: 57)
+  socials: BusinessSocials;
+  paymentMethods: string[]; // List of enabled method IDs (e.g., ['cash', 'nequi'])
+  paymentConfigs: {
+    cash?: { enabled: boolean };
+    nequi?: PaymentConfigDetail;
+    daviplata?: PaymentConfigDetail;
+    bancolombia?: PaymentConfigDetail;
+    mercadoPago?: PaymentConfigDetail;
+    stripe?: PaymentConfigDetail;
   };
-  paymentMethods: string[];
-  paymentConfigs?: Record<string, { account?: string; instructions?: string; qrImage?: string }>;
   usage: {
     voiceAICount: number;
     productCount: number;
   };
+  isActive?: boolean;
 }
 
 export interface Product {
@@ -142,6 +203,23 @@ export interface Order {
   total: number;
   paymentMethod: string;
   status: 'pending' | 'preparing' | 'delivered' | 'cancelled';
+  address?: string;
+  city?: string;
+  department?: string;
+  notes?: string;
+  orderType: 'mesa' | 'domicilio';
+  tableNumber?: string;
+  createdAt: number;
+}
+
+export interface Table {
+  id: string;
+  businessId: string;
+  number: string;
+  capacity: number;
+  location?: string;
+  status: 'active' | 'inactive';
+  description?: string;
   createdAt: number;
 }
 

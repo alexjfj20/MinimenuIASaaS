@@ -21,7 +21,7 @@ const App: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const isSyncing = useRef(false);
   const SUPER_ADMIN_EMAIL = 'alexjfweb@gmail.com';
 
@@ -40,7 +40,7 @@ const App: React.FC = () => {
 
   const syncState = useCallback(async (user: any) => {
     const params = new URLSearchParams(window.location.search);
-    
+
     // GUARDIA: Si estamos viendo un menú público, no cambiar la vista aunque el usuario esté logueado
     if (params.has('business')) {
       setLoading(false);
@@ -49,7 +49,7 @@ const App: React.FC = () => {
 
     if (isSyncing.current) return;
     isSyncing.current = true;
-    
+
     try {
       if (!user) {
         setSession(null);
@@ -72,7 +72,8 @@ const App: React.FC = () => {
       } else if (cloudBusinesses.length > 0) {
         const myBusiness = cloudBusinesses[0];
         setSession({ role: 'businessadmin', businessId: myBusiness.id });
-        await loadAdminData(myBusiness.id);
+        // No bloqueamos la carga de la app esperando a los productos/pedidos
+        loadAdminData(myBusiness.id);
         setView('businessadmin');
       } else {
         setSession({ role: 'businessadmin' });
@@ -92,7 +93,7 @@ const App: React.FC = () => {
     const initializeApp = async () => {
       try {
         const params = new URLSearchParams(window.location.search);
-        
+
         // Prioridad 1: Vista pública (Detección de ?business=)
         if (params.has('business')) {
           if (mounted) {
@@ -103,7 +104,7 @@ const App: React.FC = () => {
         }
 
         const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
-        
+
         if (mounted) {
           if (currentSession?.user) {
             await syncState(currentSession.user);
@@ -134,6 +135,24 @@ const App: React.FC = () => {
     return () => { mounted = false; };
   }, [syncState]);
 
+  const handleLogout = async () => {
+    try {
+      setLoading(true);
+      await supabase.auth.signOut();
+      setSession(null);
+      setBusinesses(MOCK_BUSINESSES);
+      setProducts([]);
+      setOrders([]);
+      // Aseguramos que volvemos a la raíz para limpiar cualquier parámetro de búsqueda como ?business=
+      window.history.replaceState({}, '', '/');
+      setView('landing');
+    } catch (err) {
+      console.error("Error al cerrar sesión:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white">
@@ -161,26 +180,26 @@ const App: React.FC = () => {
         }
         setLoading(false);
       }} setView={setView} />}
-      
+
       {view === 'superadmin' && session?.role === 'superadmin' && (
-        <SuperAdminPanel businesses={businesses} setBusinesses={setBusinesses} onLogout={() => supabase.auth.signOut()} />
+        <SuperAdminPanel businesses={businesses} setBusinesses={setBusinesses} onLogout={handleLogout} />
       )}
-      
+
       {view === 'businessadmin' && currentBusiness && (
-        <BusinessAdminPanel 
+        <BusinessAdminPanel
           business={currentBusiness}
           setBusinesses={setBusinesses}
           products={products}
           setProducts={setProducts}
           orders={orders}
           setOrders={setOrders}
-          onLogout={() => supabase.auth.signOut()}
+          onLogout={handleLogout}
         />
       )}
 
       {view === 'publicmenu' && (
-        <PublicMenu 
-          businesses={businesses} 
+        <PublicMenu
+          businesses={businesses}
           products={products}
           addOrder={async (o) => {
             const created = await orderService.createOrder(o);
