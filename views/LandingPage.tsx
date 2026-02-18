@@ -1,21 +1,38 @@
 
-import React, { useRef } from 'react';
-import { AppView, PlanType, Plan } from '../types';
-import { PLANS } from '../constants';
+import React, { useRef, useState, useEffect } from 'react';
+import { AppView } from '../types';
+import { LandingPlan } from '../types';
+import { landingPlanService } from '../services/landingPlanService';
 
 interface LandingPageProps {
   setView: (v: AppView) => void;
 }
 
-const SUBSCRIPTION_PLANS_ORDER: PlanType[] = [PlanType.BASIC, PlanType.PRO, PlanType.ENTERPRISE];
-
-const formatPrice = (price: number): string => {
+const formatPrice = (price: number, currency: string): string => {
   if (price === 0) return 'Gratis';
-  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 }).format(price);
+  const curr = currency === 'EUR' ? 'EUR' : currency === 'USD' ? 'USD' : 'EUR';
+  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: curr, minimumFractionDigits: 2 }).format(price);
+};
+
+const periodLabel = (period: LandingPlan['period']): string => {
+  if (period === 'monthly') return '/mes';
+  if (period === 'yearly') return '/año';
+  return '';
 };
 
 const LandingPage: React.FC<LandingPageProps> = ({ setView }) => {
   const preciosSectionRef = useRef<HTMLElement>(null);
+  const [landingPlans, setLandingPlans] = useState<LandingPlan[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    landingPlanService.getPublicLandingPlans()
+      .then((plans) => { if (!cancelled) setLandingPlans(plans); })
+      .catch(() => { if (!cancelled) setLandingPlans([]); })
+      .finally(() => { if (!cancelled) setPlansLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   const scrollToPrecios = (): void => {
     preciosSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -162,60 +179,68 @@ const LandingPage: React.FC<LandingPageProps> = ({ setView }) => {
         </div>
       </section>
 
-      {/* Planes de suscripción */}
+      {/* Planes de suscripción (sincronizados con Planes Fijos del Super Admin) */}
       <section ref={preciosSectionRef} id="precios" className="py-24 bg-white border-t border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
             <h2 className="text-xs font-black text-indigo-600 uppercase tracking-[0.2em]">Planes</h2>
             <p className="text-3xl md:text-5xl font-bold text-slate-900 tracking-tight">Planes de suscripción para tu negocio</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            {SUBSCRIPTION_PLANS_ORDER.map((planKey) => {
-              const plan: Plan = PLANS[planKey];
-              if (!plan) return null;
-              const isPro = plan.id === PlanType.PRO;
-              return (
-                <div
-                  key={plan.id}
-                  className={`relative p-8 rounded-3xl border shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
-                    isPro ? 'border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500' : 'border-slate-100 bg-white'
-                  }`}
-                >
-                  {isPro && (
-                    <div className="absolute top-0 right-0 px-4 py-1 rounded-bl-2xl bg-indigo-600 text-white text-xs font-bold uppercase tracking-wider">
-                      Popular
-                    </div>
-                  )}
-                  <h3 className="text-xl font-bold text-slate-800 mb-1">{plan.name}</h3>
-                  <div className="mb-6">
-                    <span className="text-4xl font-black text-slate-900">{formatPrice(plan.price)}</span>
-                    {plan.price > 0 && <span className="text-slate-500 font-medium">/mes</span>}
-                  </div>
-                  <ul className="space-y-3 mb-8">
-                    {plan.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-slate-600 text-sm">
-                        <svg className="w-5 h-5 text-indigo-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <button
-                    type="button"
-                    onClick={() => setView('register')}
-                    className={`w-full py-3 px-4 rounded-2xl font-bold transition-all ${
-                      isPro
-                        ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                        : 'bg-slate-100 text-slate-800 hover:bg-slate-200'
+          {plansLoading ? (
+            <div className="grid md:grid-cols-3 gap-8">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-80 rounded-3xl border border-slate-100 bg-slate-50 animate-pulse" />
+              ))}
+            </div>
+          ) : landingPlans.length === 0 ? (
+            <p className="text-center text-slate-500 py-12">No hay planes publicados en este momento.</p>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-8">
+              {landingPlans.map((plan) => {
+                const isPopular = plan.isPopular;
+                return (
+                  <div
+                    key={plan.id}
+                    className={`relative p-8 rounded-3xl border shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
+                      isPopular ? 'border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500' : 'border-slate-100 bg-white'
                     }`}
                   >
-                    {plan.price === 0 ? 'Empezar Gratis' : 'Elegir plan'}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
+                    {isPopular && (
+                      <div className="absolute top-0 right-0 px-4 py-1 rounded-bl-2xl bg-indigo-600 text-white text-xs font-bold uppercase tracking-wider">
+                        Popular
+                      </div>
+                    )}
+                    <h3 className="text-xl font-bold text-slate-800 mb-1">{plan.name}</h3>
+                    <div className="mb-6">
+                      <span className="text-4xl font-black text-slate-900">{formatPrice(plan.price, plan.currency)}</span>
+                      {plan.price > 0 && <span className="text-slate-500 font-medium">{periodLabel(plan.period)}</span>}
+                    </div>
+                    <ul className="space-y-3 mb-8">
+                      {(plan.features ?? []).map((feature, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-slate-600 text-sm">
+                          <svg className="w-5 h-5 text-indigo-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      type="button"
+                      onClick={() => setView('register')}
+                      className={`w-full py-3 px-4 rounded-2xl font-bold transition-all ${
+                        isPopular
+                          ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                          : 'bg-slate-100 text-slate-800 hover:bg-slate-200'
+                      }`}
+                    >
+                      {plan.price === 0 ? 'Empezar Gratis' : 'Elegir plan'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 

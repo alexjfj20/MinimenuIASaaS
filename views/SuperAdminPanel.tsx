@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Business, PlanType, GlobalPaymentConfig, Module, SystemService, LandingPlan, PlanAuditLog, HybridPlan, Integration, SaasPlan } from '../types';
 import { MOCK_HYBRID_PLANS } from '../constants';
 import { planService } from '../services/planService';
+import { landingPlanService } from '../services/landingPlanService';
 
 interface SuperAdminPanelProps {
   businesses: Business[];
@@ -38,7 +39,18 @@ const SuperAdminPanel: React.FC<SuperAdminPanelProps> = ({ businesses, setBusine
   // Cargar planes al montar
   useEffect(() => {
     loadSaasPlans();
+    loadLandingPlans();
   }, []);
+
+  const loadLandingPlans = async () => {
+    try {
+      const plans = await landingPlanService.getAllLandingPlans();
+      setLandingPlans(plans);
+    } catch (err) {
+      console.error('Error loading landing plans:', err);
+      setLandingPlans([]);
+    }
+  };
 
   const loadSaasPlans = async () => {
     try {
@@ -85,63 +97,8 @@ const SuperAdminPanel: React.FC<SuperAdminPanelProps> = ({ businesses, setBusine
   // Porcentaje de ahorro anual editable
   const [annualSavings, setAnnualSavings] = useState(20);
 
-  // Sistema de Planes State
-  const [landingPlans, setLandingPlans] = useState<LandingPlan[]>([
-    {
-      id: 'lp1',
-      slug: 'plan-basico-mensual',
-      name: 'Básico',
-      description: 'Ideal para pequeños emprendimientos que inician su viaje digital.',
-      price: 0,
-      currency: 'USD',
-      period: 'monthly',
-      features: ['Menú Digital', '10 Productos', 'Soporte Básico'],
-      isActive: true,
-      isPublic: true,
-      isPopular: false,
-      order: 1,
-      icon: '🌱',
-      color: '#6366f1',
-      maxUsers: 2,
-      maxProjects: 1
-    },
-    {
-      id: 'lp2',
-      slug: 'plan-pro-mensual',
-      name: 'Profesional',
-      description: 'Potencia tu negocio con herramientas avanzadas e IA.',
-      price: 29.99,
-      currency: 'USD',
-      period: 'monthly',
-      features: ['Productos Ilimitados', 'IA por Voz', 'Reportes PRO'],
-      isActive: true,
-      isPublic: true,
-      isPopular: true,
-      order: 2,
-      icon: '🚀',
-      color: '#8b5cf6',
-      maxUsers: 10,
-      maxProjects: 5
-    },
-    {
-      id: 'lp3',
-      slug: 'plan-pro-anual',
-      name: 'Profesional Anual',
-      description: 'Ahorra 2 meses contratando el año completo.',
-      price: 299.90,
-      currency: 'USD',
-      period: 'yearly',
-      features: ['Productos Ilimitados', 'IA por Voz', 'Reportes PRO', 'Ahorro del 20%'],
-      isActive: true,
-      isPublic: true,
-      isPopular: true,
-      order: 2,
-      icon: '💎',
-      color: '#8b5cf6',
-      maxUsers: 10,
-      maxProjects: 5
-    }
-  ]);
+  // Sistema de Planes State (Planes Fijos: se cargan desde Supabase)
+  const [landingPlans, setLandingPlans] = useState<LandingPlan[]>([]);
 
   // Planes Híbridos State
   const [hybridPlans, setHybridPlans] = useState<HybridPlan[]>(MOCK_HYBRID_PLANS);
@@ -275,30 +232,62 @@ const SuperAdminPanel: React.FC<SuperAdminPanelProps> = ({ businesses, setBusine
     }, 1200);
   };
 
-  const handlePlanSubmit = (e: React.FormEvent) => {
+  const handlePlanSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditingPlan) {
-      setLandingPlans(prev => prev.map(p => p.id === isEditingPlan.id ? isEditingPlan : p));
-      addAuditLog(isEditingPlan.id, isEditingPlan.name, 'update', `Se actualizaron los parámetros del plan ${isEditingPlan.slug}`);
-      setIsEditingPlan(null);
+      try {
+        const updated = await landingPlanService.updateLandingPlan(isEditingPlan.id, isEditingPlan);
+        setLandingPlans(prev => prev.map(p => p.id === updated.id ? updated : p));
+        addAuditLog(updated.id, updated.name, 'update', `Se actualizaron los parámetros del plan ${updated.slug}`);
+        setIsEditingPlan(null);
+      } catch (err) {
+        console.error('Error updating landing plan:', err);
+        alert('Error al guardar el plan. Revisa la consola.');
+      }
     } else {
-      const planToCreate: LandingPlan = {
-        ...(newPlan as LandingPlan),
-        id: 'lp-' + Date.now(),
-        slug: newPlan.slug || newPlan.name?.toLowerCase().replace(/\s+/g, '-') || 'plan-nuevo'
+      const slug = newPlan.slug?.trim() || newPlan.name?.toLowerCase().replace(/\s+/g, '-') || 'plan-nuevo';
+      const toCreate: Omit<LandingPlan, 'id'> = {
+        slug,
+        name: newPlan.name ?? '',
+        description: newPlan.description ?? '',
+        price: newPlan.price ?? 0,
+        currency: newPlan.currency ?? 'USD',
+        period: (newPlan.period ?? 'monthly') as LandingPlan['period'],
+        features: newPlan.features ?? [],
+        isActive: newPlan.isActive ?? true,
+        isPublic: newPlan.isPublic ?? true,
+        isPopular: newPlan.isPopular ?? false,
+        order: newPlan.order ?? 1,
+        icon: newPlan.icon ?? '✨',
+        color: newPlan.color ?? '#6366f1',
+        maxUsers: newPlan.maxUsers ?? 5,
+        maxProjects: newPlan.maxProjects ?? 2,
+        hotmartUrl: newPlan.hotmartUrl
       };
-      setLandingPlans(prev => [...prev, planToCreate]);
-      addAuditLog(planToCreate.id, planToCreate.name, 'create', `Creación inicial del plan ${planToCreate.slug}`);
-      setIsAddingPlan(false);
+      try {
+        const created = await landingPlanService.createLandingPlan(toCreate);
+        setLandingPlans(prev => [...prev, created]);
+        addAuditLog(created.id, created.name, 'create', `Creación inicial del plan ${created.slug}`);
+        setIsAddingPlan(false);
+        setNewPlan({ name: '', slug: '', description: '', price: 0, currency: 'USD', period: 'monthly', features: [], isActive: true, isPublic: true, isPopular: false, order: 1, icon: '✨', color: '#6366f1', maxUsers: 5, maxProjects: 2 });
+      } catch (err) {
+        console.error('Error creating landing plan:', err);
+        alert('Error al crear el plan. Ejecuta en Supabase el archivo migration_landing_plans.sql si aún no existe la tabla.');
+      }
     }
   };
 
-  const handleDeletePlan = (id: string) => {
+  const handleDeletePlan = async (id: string) => {
     const plan = landingPlans.find(p => p.id === id);
     if (!plan) return;
-    if (confirm(`¿Estás seguro de eliminar el plan "${plan.name}"? Esta acción no se puede deshacer.`)) {
+    if (!confirm(`¿Estás seguro de eliminar el plan "${plan.name}"? Esta acción no se puede deshacer.`)) return;
+    try {
+      await landingPlanService.deleteLandingPlan(id);
       setLandingPlans(prev => prev.filter(p => p.id !== id));
       addAuditLog(id, plan.name, 'delete', `Eliminación del plan comercial ${plan.slug}`);
+    } catch (err) {
+      console.error('Error deleting landing plan:', err);
+      alert('Error al eliminar el plan.');
     }
   };
 
