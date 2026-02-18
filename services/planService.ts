@@ -19,7 +19,7 @@ export const planService = {
             description: p.descripcion,
             price: Number(p.precio),
             type: p.tipo,
-            status: p.estado,
+            status: p.estado === 'activo' ? 'active' : 'inactive',
             createdAt: p.created_at,
             updatedAt: p.updated_at
         }));
@@ -36,7 +36,7 @@ export const planService = {
                 descripcion: plan.description,
                 precio: plan.price,
                 tipo: plan.type,
-                estado: plan.status
+                estado: plan.status === 'active' ? 'activo' : 'inactivo'
             }])
             .select()
             .single();
@@ -49,7 +49,7 @@ export const planService = {
             description: data.descripcion,
             price: Number(data.precio),
             type: data.tipo,
-            status: data.estado,
+            status: data.estado === 'activo' ? 'active' : 'inactive',
             createdAt: data.created_at,
             updatedAt: data.updated_at
         };
@@ -64,7 +64,7 @@ export const planService = {
         if (updates.description !== undefined) payload.descripcion = updates.description;
         if (updates.price !== undefined) payload.precio = updates.price;
         if (updates.type !== undefined) payload.tipo = updates.type;
-        if (updates.status !== undefined) payload.estado = updates.status;
+        if (updates.status !== undefined) payload.estado = updates.status === 'active' ? 'activo' : 'inactivo';
 
         const { data, error } = await supabase
             .from('planes')
@@ -81,7 +81,7 @@ export const planService = {
             description: data.descripcion,
             price: Number(data.precio),
             type: data.tipo,
-            status: data.estado,
+            status: data.estado === 'activo' ? 'active' : 'inactive',
             createdAt: data.created_at,
             updatedAt: data.updated_at
         };

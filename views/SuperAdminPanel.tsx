@@ -58,9 +58,10 @@ const SuperAdminPanel: React.FC<SuperAdminPanelProps> = ({ businesses, setBusine
       setSaasPlans(prev => [plan, ...prev]);
       setIsAddingSaasPlan(false);
       setNewSaasPlan({ name: '', description: '', price: 0, type: 'mensual', status: 'active' });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating plan:', error);
-      alert('Error al crear el plan');
+      const msg = error?.message || error?.error_description || String(error);
+      alert(`Error al crear el plan: ${msg}. Si ves "row-level security", ejecuta en Supabase el archivo migration_planes_rls_write.sql`);
     }
   };
 
@@ -72,9 +73,10 @@ const SuperAdminPanel: React.FC<SuperAdminPanelProps> = ({ businesses, setBusine
       const updated = await planService.updatePlan(editingSaasPlan.id, editingSaasPlan);
       setSaasPlans(prev => prev.map(p => p.id === updated.id ? updated : p));
       setEditingSaasPlan(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating plan:', error);
-      alert('Error al actualizar el plan');
+      const msg = error?.message || error?.error_description || String(error);
+      alert(`Error al actualizar el plan: ${msg}`);
     }
   };
 
