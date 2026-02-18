@@ -1,11 +1,37 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { AppView } from '../types';
-import { LandingPlan } from '../types';
+import { AppView, LandingPlan, PlanType } from '../types';
 import { landingPlanService } from '../services/landingPlanService';
+import { PLANS } from '../constants';
 
 interface LandingPageProps {
   setView: (v: AppView) => void;
+}
+
+/** Planes por defecto cuando la API no devuelve datos (tabla vacía o no creada). */
+function getFallbackPlans(): LandingPlan[] {
+  const order: PlanType[] = [PlanType.BASIC, PlanType.PRO, PlanType.ENTERPRISE];
+  return order.map((key, index) => {
+    const p = PLANS[key];
+    return {
+      id: p.id,
+      slug: `plan-${key.toLowerCase()}`,
+      name: p.name,
+      description: '',
+      price: p.price,
+      currency: 'EUR',
+      period: 'monthly' as const,
+      features: p.features ?? [],
+      isActive: true,
+      isPublic: true,
+      isPopular: key === PlanType.PRO,
+      order: index + 1,
+      icon: '✨',
+      color: '#6366f1',
+      maxUsers: 5,
+      maxProjects: 2
+    };
+  });
 }
 
 const formatPrice = (price: number, currency: string): string => {
@@ -37,6 +63,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ setView }) => {
   const scrollToPrecios = (): void => {
     preciosSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  const displayPlans: LandingPlan[] = landingPlans.length > 0 ? landingPlans : getFallbackPlans();
 
   return (
     <div className="min-h-screen bg-white selection:bg-indigo-100 selection:text-indigo-900">
@@ -192,11 +220,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ setView }) => {
                 <div key={i} className="h-80 rounded-3xl border border-slate-100 bg-slate-50 animate-pulse" />
               ))}
             </div>
-          ) : landingPlans.length === 0 ? (
-            <p className="text-center text-slate-500 py-12">No hay planes publicados en este momento.</p>
           ) : (
             <div className="grid md:grid-cols-3 gap-8">
-              {landingPlans.map((plan) => {
+              {displayPlans.map((plan) => {
                 const isPopular = plan.isPopular;
                 return (
                   <div

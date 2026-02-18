@@ -23,7 +23,7 @@ interface LandingPlanRow {
   updated_at?: string;
 }
 
-function rowToPlan(row: LandingPlanRow): LandingPlan {
+function rowToPlan(row: LandingPlanRow & { order?: number }): LandingPlan {
   return {
     id: row.id,
     slug: row.slug,
@@ -33,14 +33,14 @@ function rowToPlan(row: LandingPlanRow): LandingPlan {
     currency: row.currency,
     period: row.period as LandingPlan['period'],
     features: Array.isArray(row.features) ? row.features : [],
-    isActive: row.is_active,
-    isPublic: row.is_public,
-    isPopular: row.is_popular,
-    order: row.order,
-    icon: row.icon,
-    color: row.color,
-    maxUsers: row.max_users,
-    maxProjects: row.max_projects,
+    isActive: Boolean(row.is_active),
+    isPublic: Boolean(row.is_public),
+    isPopular: Boolean(row.is_popular),
+    order: Number(row.order) || 0,
+    icon: row.icon ?? '✨',
+    color: row.color ?? '#6366f1',
+    maxUsers: Number(row.max_users) || 0,
+    maxProjects: Number(row.max_projects) || 0,
     hotmartUrl: row.hotmart_url ?? undefined
   };
 }
@@ -55,10 +55,11 @@ export const landingPlanService = {
       .select('*')
       .eq('is_public', true)
       .eq('is_active', true)
-      .order('order', { ascending: true });
+      .order('created_at', { ascending: true });
 
     if (error) throw error;
-    return (data ?? []).map((row: LandingPlanRow) => rowToPlan(row));
+    const plans = (data ?? []).map((row: LandingPlanRow) => rowToPlan(row));
+    return plans.sort((a, b) => a.order - b.order);
   },
 
   /**
@@ -68,10 +69,11 @@ export const landingPlanService = {
     const { data, error } = await supabase
       .from('landing_plans')
       .select('*')
-      .order('order', { ascending: true });
+      .order('created_at', { ascending: true });
 
     if (error) throw error;
-    return (data ?? []).map((row: LandingPlanRow) => rowToPlan(row));
+    const plans = (data ?? []).map((row: LandingPlanRow) => rowToPlan(row));
+    return plans.sort((a, b) => a.order - b.order);
   },
 
   async createLandingPlan(plan: Omit<LandingPlan, 'id'>): Promise<LandingPlan> {
